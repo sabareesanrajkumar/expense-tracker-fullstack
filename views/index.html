@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Expense Tracker</h1>
+    <form id="expense-form">
+        <input type="hidden" name="id" id="id">
+        <input type="number" name="expense" id="expense" placeholder="expense" required>
+        <input type="text" name="description" id="description" placeholder="description">
+        <select id="type" name="type" required>
+            <option value="" disabled selected hidden>Select an type</option>
+            <option value="food">Food</option>
+            <option value="transports">Transports</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Entertainment">Entertainment</option>
+          </select>
+        <button type="submit">Add</button>
+    </form>
+    <div id="expenses"></div>
+
+
+
+    <script>
+        document.getElementById('expense-form').addEventListener('submit',async (event)=>{
+            event.preventDefault();
+            const formData = {
+                expense: event.target.expense.value,
+                description: event.target.description.value,
+                type: event.target.type.value
+            }
+
+            if (event.target.id.value){
+                await axios.put(`http://localhost:3000/expenses/edit/${event.target.id.value}`,formData);
+                resetForm();
+                getExpenses();
+
+            }else{
+                await axios.post('http://localhost:3000/expenses',formData);
+                resetForm();
+                getExpenses();
+            }
+            
+        })
+
+        function resetForm(){
+            document.getElementById('id').value = '';
+            document.getElementById('expense').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('type').value = '';    
+        }
+
+        async function getExpenses(){
+            const expensesContainer = document.getElementById('expenses');
+            const getExpenseResponse = await axios.get('http://localhost:3000/expenses');
+            expensesContainer.innerHTML = ``;
+            getExpenseResponse.data.forEach(expense => {
+                const expenseData = document.createElement('p');
+                expenseData.innerHTML=`
+                ${expense.expense} - ${expense.description} - ${expense.type}
+                <button onclick = "deleteExpense(${expense.id})">Delete</button>
+                <button onclick = "editExpense('${expense.id}', '${expense.expense}', '${expense.description}', '${expense.type}')">Edit</button>
+                `;
+                expensesContainer.append(expenseData);
+            });
+        }
+
+        async function deleteExpense(id){
+            await axios.delete(`http://localhost:3000/expenses/delete/${id}`);
+            getExpenses();
+        }
+
+        
+        function editExpense(id,expense, description , type){
+            console.log("in edit",id,expense,description,type);
+            document.getElementById('id').value = id; 
+            document.getElementById('expense').value = expense; 
+            document.getElementById('description').value = description; 
+            document.getElementById('type').value = type;            
+        }
+
+        window.onload = getExpenses();
+    </script>
+    
+</body>
+</html>
